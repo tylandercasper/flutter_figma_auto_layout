@@ -1,6 +1,7 @@
 library figma_auto_layout;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:signed_spacing_flex/signed_spacing_flex.dart';
 
 export 'package:signed_spacing_flex/signed_spacing_flex.dart'
@@ -275,13 +276,11 @@ class FigmaAutoLayout extends FigmaAutoLayoutChild {
     return newChildren;
   }
 
-  /// Generates a list of absolute positioned children at their appropriate positions
-  /// to be displayed on top of the normal children.
-  List<Widget> _buildPositionedChildrenUnderneath(BuildContext context) {
+  List<Widget> _buildPositionedChildren(BuildContext context, bool showOnTop) {
     var newChildren = <Widget>[];
 
     for (final child in children) {
-      if (child.hasAbsolutePosition && !child.showOnTop) {
+      if (child.hasAbsolutePosition && child.showOnTop == showOnTop) {
         newChildren.add(
           Positioned.directional(
             textDirection: _getTextDirection(context),
@@ -294,29 +293,20 @@ class FigmaAutoLayout extends FigmaAutoLayoutChild {
         );
       }
     }
-    return newChildren;
+    if (newChildren.isEmpty) return [];
+    return [Positioned.fill(child: Stack(children: newChildren))];
+  }
+
+  /// Generates a list of absolute positioned children at their appropriate positions
+  /// to be displayed on top of the normal children.
+  List<Widget> _buildPositionedChildrenUnderneath(BuildContext context) {
+    return _buildPositionedChildren(context, false);
   }
 
   /// Generates a list of absolute positioned children at their appropriate positions.
   /// to be displayed underneath the normal children.
   List<Widget> _buildPositionedChildrenOnTop(BuildContext context) {
-    var newChildren = <Widget>[];
-
-    for (final child in children) {
-      if (child.hasAbsolutePosition && child.showOnTop) {
-        newChildren.add(
-          Positioned.directional(
-            textDirection: _getTextDirection(context),
-            start: child.start,
-            top: child.top,
-            end: child.end,
-            bottom: child.bottom,
-            child: child,
-          ),
-        );
-      }
-    }
-    return newChildren;
+    return _buildPositionedChildren(context, true);
   }
 
   @override
@@ -344,7 +334,7 @@ class FigmaAutoLayout extends FigmaAutoLayoutChild {
             ),
           ),
         ),
-        ..._buildPositionedChildrenOnTop(context),
+        ..._buildPositionedChildrenOnTop(context)
       ],
     );
   }
